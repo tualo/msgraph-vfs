@@ -23,13 +23,26 @@ class Test extends \Tualo\Office\Basic\RouteWrapper
 
                 $scheme = App::configuration('msgraph-vfs', 'scheme', 'msgraph-vfs');
                 $folderPath = isset($matches['folderPath']) ? trim(urldecode($matches['folderPath']), '/') : '';
+                $folderPath = preg_replace('#/Forms/AllItems\.aspx$#i', '', $folderPath) ?? $folderPath;
+                $folderPath = preg_replace('#/Forms$#i', '', $folderPath) ?? $folderPath;
                 $directoryUrl = $scheme . '://' . ($folderPath !== '' ? $folderPath : '');
 
                 if ($folderPath !== '' && !is_dir($directoryUrl)) {
                     mkdir($directoryUrl, 0777, true);
                 }
 
-                file_put_contents($directoryUrl . '/test.txt', 'Inhalt');
+                $targetFile = $directoryUrl . '/test.txt';
+                $bytesWritten = file_put_contents($targetFile, 'Inhalt');
+                if ($bytesWritten === false) {
+                    throw new \RuntimeException(sprintf('Writing %s failed.', $targetFile));
+                }
+
+                clearstatcache(true, $targetFile);
+                $fileExists = file_exists($targetFile);
+                if (!$fileExists) {
+                    throw new \RuntimeException(sprintf('File %s was not created.', $targetFile));
+                }
+
                 $entries = [];
                 $handle = opendir($directoryUrl);
                 if ($handle !== false) {
@@ -41,6 +54,8 @@ class Test extends \Tualo\Office\Basic\RouteWrapper
                     closedir($handle);
                 }
 
+                App::result('writtenBytes', $bytesWritten);
+                App::result('fileExists', $fileExists);
                 App::result('data', $entries);
                 App::result('success', true);
             } catch (\Exception $e) {
