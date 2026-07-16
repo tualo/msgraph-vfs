@@ -15,8 +15,8 @@ class Test extends \Tualo\Office\Basic\RouteWrapper
         BasicRoute::add('/msgraph-vfs/(?P<file>[\w.\/\-]+.js)', function ($matches) {
             App::contenttype('application/json');
             try {
-                App::result('drive', VFS::getDriveId());
-                App::result('site', VFS::getSiteId());
+                // App::result('drive', VFS::getDriveId());
+                App::result('site', VFS::getSiteId('https://tualo.sharepoint.com/sites/wvd-tualo'));
 
                 App::result('success', true);
             } catch (\Exception $e) {

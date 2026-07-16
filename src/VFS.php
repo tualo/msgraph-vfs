@@ -61,7 +61,7 @@ class VFS
         throw new \RuntimeException('No MS Graph drive configured. Set msgraph-vfs.driveId or msgraph-vfs.siteId.');
     }
 
-    public static function getSiteId(): ?string
+    public static function getSiteId(?string $siteURL): ?string
     {
         $configuredSiteId = trim((string) App::configuration('msgraph-vfs', 'siteId', ''));
         if ($configuredSiteId !== '') {
@@ -70,6 +70,12 @@ class VFS
 
         $configuredDriveId = trim((string) App::configuration('msgraph-vfs', 'driveId', ''));
         $graphClient = API::GraphClient();
+
+        if ($siteURL !== null && $siteURL !== '') {
+            $siteId = $graphClient->sites()->byPath($siteURL)->get()->wait()->getId();
+            return $siteId;
+            //        $driveId = $graphClient->sites()->bySiteId($siteURL)->drive()->get()->wait()->getId();
+        }
 
         if ($configuredDriveId !== '') {
             $drive = $graphClient->drives()->byDriveId($configuredDriveId)->get()->wait();
