@@ -1,0 +1,25 @@
+{
+  "name": "tualo/msgraph-vfs",
+  "description": "tualo - msgraph virtual file system",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Thomas Hoffmann",
+      "email": "thomas.hoffmann@tualo.de"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Tualo\\Office\\MSGraphVFS\\": "src/"
+    },
+    "files": [
+      "src/functions.php"
+    ]
+  },
+  "minimum-stability": "dev",
+  "require": {
+    "tualo/msgraph": "^1.1"
+  },
+  "version": "1.0.0"
+}
