@@ -12,7 +12,7 @@ class Test extends \Tualo\Office\Basic\RouteWrapper
 {
     public static function register()
     {
-        BasicRoute::add('/msgraph-vfs/(?P<urlEncodedSharepointURL>[\w.\/\-]+)', function ($matches) {
+        BasicRoute::add('/msgraph-vfs/(?P<urlEncodedSharepointURL>[\.]+)', function ($matches) {
             App::contenttype('application/json');
             try {
 
