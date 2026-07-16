@@ -8,6 +8,24 @@ use Tualo\Office\MSGraph\API;
 
 class VFS
 {
+    private static function normalizeSiteIdentifier(string $siteIdentifier): string
+    {
+        $siteIdentifier = trim($siteIdentifier);
+        if ($siteIdentifier === '') {
+            return $siteIdentifier;
+        }
+
+        if (str_starts_with($siteIdentifier, 'http://') || str_starts_with($siteIdentifier, 'https://')) {
+            $parts = parse_url($siteIdentifier);
+            if (is_array($parts) && isset($parts['host'])) {
+                $path = isset($parts['path']) ? trim($parts['path'], '/') : '';
+                return $path === '' ? $parts['host'] . ':' : $parts['host'] . ':/' . $path . ':';
+            }
+        }
+
+        return $siteIdentifier;
+    }
+
     private static function getScheme(): string
     {
         $scheme = (string) App::configuration('msgraph-vfs', 'scheme', 'msgraph-vfs');
@@ -39,7 +57,7 @@ class VFS
             return $configuredDriveId;
         }
 
-        $siteId = trim((string) App::configuration('msgraph-vfs', 'siteId', ''));
+        $siteId = self::normalizeSiteIdentifier((string) App::configuration('msgraph-vfs', 'siteId', ''));
         $graphClient = API::GraphClient();
 
         if ($siteId !== '') {
@@ -72,9 +90,13 @@ class VFS
         $graphClient = API::GraphClient();
 
         if ($siteURL !== null && $siteURL !== '') {
-            $siteId = $graphClient->sites()->byPath($siteURL)->get()->wait()->getId();
-            return $siteId;
-            //        $driveId = $graphClient->sites()->bySiteId($siteURL)->drive()->get()->wait()->getId();
+            $siteIdentifier = self::normalizeSiteIdentifier($siteURL);
+            $site = $graphClient->sites()->bySiteId($siteIdentifier)->get()->wait();
+            if ($site !== null && method_exists($site, 'getId') && $site->getId() !== null) {
+                return $site->getId();
+            }
+
+            return null;
         }
 
         if ($configuredDriveId !== '') {
