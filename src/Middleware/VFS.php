@@ -11,7 +11,12 @@ class VFS implements IMiddleware
     public static function register()
     {
         TualoApplication::use('TualoApplication_msgraph_vfs', function () {
-            V::registerVFS();
+
+
+            $url = TualoApplication::configuration('msgraph-vfs', 'siteURL', '');
+            if (trim($url) !== '') {
+                V::registerVFS($url);
+            }
         }, 0, [], true);
     }
 }

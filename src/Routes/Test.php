@@ -12,11 +12,18 @@ class Test extends \Tualo\Office\Basic\RouteWrapper
 {
     public static function register()
     {
-        BasicRoute::add('/msgraph-vfs/(?P<file>[\w.\/\-]+.js)', function ($matches) {
+        BasicRoute::add('/msgraph-vfs/(?P<urlEncodedSharepointURL>[\w.\/\-]+)', function ($matches) {
             App::contenttype('application/json');
             try {
-                // App::result('drive', VFS::getDriveId());
-                App::result('site', VFS::getSiteId('https://tualo.sharepoint.com/sites/wvd-tualo'));
+
+                App::result('resolved', VFS::resolveSharePointIds(urldecode($matches['urlEncodedSharepointURL'])));
+
+                VFS::registerVFS(urldecode($matches['urlEncodedSharepointURL']), 'myvfs');
+                App::result('data', glob(
+                    'myvfs://*',
+                    GLOB_ONLYDIR
+                ));
+
 
                 App::result('success', true);
             } catch (\Exception $e) {
