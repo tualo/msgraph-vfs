@@ -104,7 +104,7 @@ class SharePointStreamWrapper
         return 'root:/' . implode('/', $segments) . ':';
     }
 
-    private static function getDriveId(): string
+    private static function resolveDriveId(): string
     {
         $driveId = trim((string) self::getConfig('driveId', ''));
         if ($driveId !== '') {
@@ -127,6 +127,41 @@ class SharePointStreamWrapper
         throw new \RuntimeException('No MS Graph drive configured. Set msgraph-vfs.driveId or msgraph-vfs.siteId.');
     }
 
+    private static function resolveSiteIdFromDriveId(string $driveId): ?string
+    {
+        $drive = self::getGraphClient()->drives()->byDriveId($driveId)->get()->wait();
+
+        if ($drive !== null && method_exists($drive, 'getSharePointIds') && $drive->getSharePointIds() !== null) {
+            return $drive->getSharePointIds()->getSiteId();
+        }
+
+        return null;
+    }
+
+    public static function getDriveId(): string
+    {
+        return self::resolveDriveId();
+    }
+
+    public static function getSiteId(): ?string
+    {
+        $siteId = trim((string) self::getConfig('siteId', ''));
+        if ($siteId !== '') {
+            return $siteId;
+        }
+
+        $driveId = trim((string) self::getConfig('driveId', ''));
+        if ($driveId !== '') {
+            return self::resolveSiteIdFromDriveId($driveId);
+        }
+
+        try {
+            return self::resolveSiteIdFromDriveId(self::resolveDriveId());
+        } catch (\Throwable $throwable) {
+            return null;
+        }
+    }
+
     private static function getDriveItemId(string $relativePath): string
     {
         return self::encodeDrivePath($relativePath);
@@ -134,12 +169,12 @@ class SharePointStreamWrapper
 
     private static function getItem(string $driveItemId)
     {
-        return self::getGraphClient()->drives()->byDriveId(self::getDriveId())->items()->byDriveItemId($driveItemId)->get()->wait();
+        return self::getGraphClient()->drives()->byDriveId(self::resolveDriveId())->items()->byDriveItemId($driveItemId)->get()->wait();
     }
 
     private static function getChildren(string $driveItemId): array
     {
-        $response = self::getGraphClient()->drives()->byDriveId(self::getDriveId())->items()->byDriveItemId($driveItemId)->children()->get()->wait();
+        $response = self::getGraphClient()->drives()->byDriveId(self::resolveDriveId())->items()->byDriveItemId($driveItemId)->children()->get()->wait();
 
         if ($response === null || !method_exists($response, 'getValue') || $response->getValue() === null) {
             return [];
@@ -150,7 +185,7 @@ class SharePointStreamWrapper
 
     private static function getContent(string $driveItemId): string
     {
-        $response = self::getGraphClient()->drives()->byDriveId(self::getDriveId())->items()->byDriveItemId($driveItemId)->content()->get()->wait();
+        $response = self::getGraphClient()->drives()->byDriveId(self::resolveDriveId())->items()->byDriveItemId($driveItemId)->content()->get()->wait();
 
         if ($response instanceof StreamInterface) {
             return (string) $response;
@@ -168,12 +203,12 @@ class SharePointStreamWrapper
 
     private static function uploadContent(string $driveItemId, string $content)
     {
-        return self::getGraphClient()->drives()->byDriveId(self::getDriveId())->items()->byDriveItemId($driveItemId)->content()->put(Utils::streamFor($content))->wait();
+        return self::getGraphClient()->drives()->byDriveId(self::resolveDriveId())->items()->byDriveItemId($driveItemId)->content()->put(Utils::streamFor($content))->wait();
     }
 
     private static function deleteItem(string $driveItemId): void
     {
-        self::getGraphClient()->drives()->byDriveId(self::getDriveId())->items()->byDriveItemId($driveItemId)->delete()->wait();
+        self::getGraphClient()->drives()->byDriveId(self::resolveDriveId())->items()->byDriveItemId($driveItemId)->delete()->wait();
     }
 
     private static function createFolder(string $parentDriveItemId, string $name)
@@ -182,7 +217,7 @@ class SharePointStreamWrapper
         $folderItem->setName($name);
         $folderItem->setFolder(new Folder());
 
-        return self::getGraphClient()->drives()->byDriveId(self::getDriveId())->items()->byDriveItemId($parentDriveItemId)->children()->post($folderItem)->wait();
+        return self::getGraphClient()->drives()->byDriveId(self::resolveDriveId())->items()->byDriveItemId($parentDriveItemId)->children()->post($folderItem)->wait();
     }
 
     private static function toStatArray(int $mode, int $size, int $mtime): array

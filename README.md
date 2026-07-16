@@ -38,6 +38,15 @@ $content = file_get_contents('sharepoint://Dokumente/Beispiel.txt');
 file_put_contents('sharepoint://Dokumente/Neu.txt', 'Hallo SharePoint');
 ```
 
+Die effektive Drive-ID und Site-ID kannst du auch per Funktion abrufen:
+
+```php
+$driveId = msgraph_vfs_drive_id();
+$siteId = msgraph_vfs_site_id();
+```
+
+Alternativ stehen auch die statischen Methoden `Tualo\Office\MSGraphVFS\VFS::getDriveId()` und `Tualo\Office\MSGraphVFS\VFS::getSiteId()` zur Verfügung.
+
 ## Umsetzungsstand
 
 1. Middleware registriert den Stream-Wrapper während der Applikationsinitialisierung.
