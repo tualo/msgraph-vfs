@@ -25,9 +25,14 @@ class Test extends \Tualo\Office\Basic\RouteWrapper
                 $folderPath = isset($matches['folderPath']) ? trim(urldecode($matches['folderPath']), '/') : '';
                 $folderPath = preg_replace('#/Forms/AllItems\.aspx$#i', '', $folderPath) ?? $folderPath;
                 $folderPath = preg_replace('#/Forms$#i', '', $folderPath) ?? $folderPath;
-                $directoryUrl = $scheme . '://' . ($folderPath !== '' ? $folderPath : '');
+                $folderSegments = $folderPath === '' ? [] : explode('/', $folderPath);
+                if (count($folderSegments) > 0) {
+                    array_shift($folderSegments);
+                }
+                $vfsPath = implode('/', $folderSegments);
+                $directoryUrl = $scheme . '://' . ($vfsPath !== '' ? $vfsPath : '');
 
-                if ($folderPath !== '' && !is_dir($directoryUrl)) {
+                if ($vfsPath !== '' && !is_dir($directoryUrl)) {
                     mkdir($directoryUrl, 0777, true);
                 }
 
